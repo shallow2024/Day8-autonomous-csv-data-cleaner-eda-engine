@@ -68,3 +68,12 @@ def test_huggingface_credit_error_is_explained(monkeypatch):
     monkeypatch.setattr("openai.OpenAI", FakeClient)
     with pytest.raises(RuntimeError, match="no remaining credits"):
         data_cleaner.generate_cleaning_code({"rows": 1})
+
+
+def test_column_string_normalization_is_allowed():
+    df = pd.DataFrame({" Customer Name ": ["Alice"]})
+    cleaned = execute_cleaning_code(
+        df,
+        "df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')",
+    )
+    assert cleaned.columns.tolist() == ["customer_name"]
