@@ -18,6 +18,7 @@ ALLOWED_CALLS = {
     "df.select_dtypes", "df.duplicated", "df.drop_duplicates",
 }
 ALLOWED_CHAINED_METHODS = {"fillna", "dropna", "astype", "replace", "drop_duplicates", "reset_index"}
+ALLOWED_STRING_METHODS = {"strip", "lower", "upper", "replace", "title"}
 FORBIDDEN_NAMES = {"__import__", "eval", "exec", "open", "compile", "globals", "locals", "input", "os", "subprocess", "pathlib"}
 
 
@@ -73,7 +74,11 @@ def validate_cleaning_code(code: str) -> ast.Module:
         if isinstance(node, ast.Call):
             qualified = _qualified_name(node.func)
             is_chained_method = isinstance(node.func, ast.Attribute) and node.func.attr in ALLOWED_CHAINED_METHODS
-            if qualified not in ALLOWED_CALLS and not is_chained_method:
+            is_column_string_method = (
+                ".str." in qualified
+                and qualified.rsplit(".", 1)[-1] in ALLOWED_STRING_METHODS
+            )
+            if qualified not in ALLOWED_CALLS and not is_chained_method and not is_column_string_method:
                 raise ValueError(f"Call is not allow-listed: {qualified}")
         if isinstance(node, ast.Attribute) and node.attr.startswith("__"):
             raise ValueError("Dunder attribute access is not allowed")
