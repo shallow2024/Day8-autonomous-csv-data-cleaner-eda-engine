@@ -83,3 +83,11 @@ def test_median_imputation_is_allowed():
     df = pd.DataFrame({"age": [20, None, 40]})
     cleaned = execute_cleaning_code(df, "df['age'] = df['age'].fillna(df['age'].median())")
     assert cleaned["age"].tolist() == [20.0, 30.0, 40.0]
+
+
+def test_valid_pandas_import_is_available_to_generated_code():
+    cleaned = execute_cleaning_code(
+        pd.DataFrame({"amount": ["1", "2"]}),
+        "import pandas as pd\ndf['amount'] = pd.to_numeric(df['amount'])",
+    )
+    assert cleaned["amount"].tolist() == [1, 2]

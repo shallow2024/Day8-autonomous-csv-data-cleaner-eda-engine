@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import builtins
 import json
 import os
 import re
@@ -101,7 +102,12 @@ def execute_cleaning_code(df: pd.DataFrame, code: str) -> pd.DataFrame:
     """Execute validated code in a minimal namespace and return a copied DataFrame."""
     validate_cleaning_code(code)
     working = df.copy(deep=True)
-    namespace = {"__builtins__": {}, "pd": pd, "df": working}
+    def restricted_import(name: str, globals_: Any = None, locals_: Any = None, fromlist: tuple[str, ...] = (), level: int = 0) -> Any:
+        if name != "pandas" or level != 0:
+            raise ImportError("Only import pandas is allowed")
+        return builtins.__import__(name, globals_, locals_, fromlist, level)
+
+    namespace = {"__builtins__": {"__import__": restricted_import}, "pd": pd, "df": working}
     exec(compile(code, "<generated-cleaning-code>", "exec"), namespace, namespace)
     result = namespace.get("df")
     if not isinstance(result, pd.DataFrame):
