@@ -1,0 +1,5 @@
+ Customer Name ,Age,Annual Income,Signup Date,Email
+ Alice Wong,34,"72000",2025-01-03,alice@example.com
+ Bob Lee,,68000,2025-01-05,bob@example.com
+ Alice Wong,34,"72000",2025-01-03,alice@example.com
+ Carol Chan,29,"",2025-01-07,carol@example.com
