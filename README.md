@@ -1,6 +1,6 @@
 # Day 8 — Autonomous CSV Data Cleaner & EDA Engine
 
-A Python data-quality agent that reads a messy CSV, profiles data types, null counts, duplicates, and numeric skewness, optionally asks Groq to generate conservative pandas cleaning code, validates that code with the Python AST, executes it in memory, and writes cleaned CSV, Excel, and metadata outputs.
+A Python data-quality agent that reads a messy CSV, profiles data types, null counts, duplicates, and numeric skewness, optionally asks a Hugging Face hosted model to generate conservative pandas cleaning code, validates that code with the Python AST, executes it in memory, and writes cleaned CSV, Excel, and metadata outputs.
 
 > **Safety note:** executing model-generated code is risky. This project does not execute arbitrary LLM output directly: it parses and rejects unsupported imports, calls, and language constructs before execution. Treat the allow-list as a learning control, not a production sandbox.
 
@@ -15,7 +15,7 @@ pandas DataFrame
    ↓
 EDA metadata: dtypes, nulls, duplicates, skewness
    ↓
-Groq generates constrained pandas code (optional)
+Hugging Face Router generates constrained pandas code (optional)
    ↓
 AST allow-list validation
    ↓
@@ -27,9 +27,17 @@ Clean CSV + Excel + EDA JSON
 ## Requirements
 
 - Python 3.10–3.12 recommended.
-- `GROQ_API_KEY` only for LLM-generated cleaning code.
+- `HF_TOKEN` only for hosted-model cleaning code.
 - No API key is needed for the offline dry-run.
-- Internet access is needed for Groq mode.
+- Internet access is needed for Hugging Face mode.
+
+The default model is:
+
+```text
+Qwen/Qwen2.5-Coder-32B-Instruct:featherless-ai
+```
+
+The explicit provider suffix is used for Hugging Face Router provider routing. Availability and capacity can vary by account and provider.
 
 ## Windows PowerShell setup
 
@@ -60,27 +68,33 @@ outputs\eda_metadata.json
 
 The Excel file is included for convenient inspection in Microsoft Excel.
 
-## Run with Groq
+## Run with Hugging Face API
 
-Set the API key for the current PowerShell session without writing it into the repository:
+Create or use a Hugging Face token with permission to call Inference Providers. Keep the token private and set it only for the current PowerShell session:
 
 ```powershell
-$env:GROQ_API_KEY = "your-key-here"
+$env:HF_TOKEN = "hf_your_token_here"
 ```
 
-Then run:
+Run the default Qwen code-generation model:
 
 ```powershell
 .\.venv\Scripts\python.exe data_cleaner.py examples\messy_customers.csv
 ```
 
-Optional model selection:
+Or select another model/provider route available to your Hugging Face account:
 
 ```powershell
-.\.venv\Scripts\python.exe data_cleaner.py examples\messy_customers.csv --model llama-3.3-70b-versatile
+.\.venv\Scripts\python.exe data_cleaner.py examples\messy_customers.csv --model "Qwen/Qwen2.5-Coder-32B-Instruct:featherless-ai"
 ```
 
-The program sends only the EDA metadata and sample rows to Groq, not the entire CSV. Review your data governance requirements before sending metadata externally.
+The program calls:
+
+```text
+https://router.huggingface.co/v1/chat/completions
+```
+
+It sends EDA metadata and three sample rows, not the entire CSV. Review privacy and data-governance requirements before sending metadata externally.
 
 ## What the agent checks
 
@@ -102,11 +116,33 @@ The generated code must preserve the DataFrame variable `df`. Before execution, 
 
 ## Test the project
 
-Tests use no Groq API and do not access files outside the test fixture:
+Tests use no Hugging Face API and do not access files outside the test fixture:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 ```
+
+## Troubleshooting Hugging Face
+
+### `HF_TOKEN is missing`
+
+Set the environment variable in the same PowerShell window used to run the command:
+
+```powershell
+$env:HF_TOKEN = "hf_your_token_here"
+```
+
+### `401 Unauthorized`
+
+Check that the token is valid and that your Hugging Face account can use Inference Providers. Do not paste the token into GitHub or chat.
+
+### `model_not_supported`
+
+Use a model/provider suffix available to your account. The default explicitly routes through `featherless-ai`; provider availability may change.
+
+### `503` or `capacity` errors
+
+The selected provider is temporarily busy. Retry later or choose another supported provider/model route.
 
 ## Limitations
 
@@ -120,6 +156,7 @@ Tests use no Groq API and do not access files outside the test fixture:
 This project demonstrates:
 
 - Automated EDA and data-quality profiling.
+- Hugging Face hosted-model integration.
 - LLM-assisted code generation.
 - AST-based validation before execution.
 - In-memory pandas transformation.

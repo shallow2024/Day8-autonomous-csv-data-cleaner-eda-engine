@@ -117,13 +117,16 @@ def deterministic_clean(df: pd.DataFrame) -> pd.DataFrame:
     return cleaned
 
 
-def generate_cleaning_code(metadata: dict[str, Any], model: str = "llama-3.3-70b-versatile") -> str:
-    """Ask Groq for constrained pandas code. Requires GROQ_API_KEY."""
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY is missing. Use --dry-run for API-free testing.")
-    from groq import Groq
-    client = Groq(api_key=api_key)
+def generate_cleaning_code(metadata: dict[str, Any], model: str = "Qwen/Qwen2.5-Coder-32B-Instruct:featherless-ai") -> str:
+    """Ask Hugging Face Router for constrained pandas code. Requires HF_TOKEN."""
+    token = os.environ.get("HF_TOKEN")
+    if not token:
+        raise RuntimeError("HF_TOKEN is missing. Use --dry-run for API-free testing.")
+    from openai import OpenAI
+    client = OpenAI(
+        base_url="https://router.huggingface.co/v1",
+        api_key=token,
+    )
     response = client.chat.completions.create(
         model=model,
         temperature=0,
@@ -155,18 +158,18 @@ def run(input_path: Path, output_dir: Path, dry_run: bool, model: str) -> pd.Dat
         generated = generate_cleaning_code(before, model=model)
         cleaned = execute_cleaning_code(df, generated)
     after = inspect_dataframe(cleaned)
-    metadata = {"input_file": str(input_path), "before": before, "after": after, "generated_code": generated, "mode": "dry-run" if dry_run else "groq"}
+    metadata = {"input_file": str(input_path), "before": before, "after": after, "generated_code": generated, "mode": "dry-run" if dry_run else "huggingface"}
     write_outputs(cleaned, metadata, output_dir)
     print(json.dumps({"before": before, "after": after, "output_dir": str(output_dir)}, indent=2, default=str))
     return cleaned
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Clean a CSV with EDA metadata and optional Groq-generated pandas code.")
+    parser = argparse.ArgumentParser(description="Clean a CSV with EDA metadata and optional Hugging Face-generated pandas code.")
     parser.add_argument("input_csv", type=Path)
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
     parser.add_argument("--dry-run", action="store_true", help="Use the deterministic offline cleaner; no API key required")
-    parser.add_argument("--model", default="llama-3.3-70b-versatile")
+    parser.add_argument("--model", default="Qwen/Qwen2.5-Coder-32B-Instruct:featherless-ai")
     return parser.parse_args()
 
 

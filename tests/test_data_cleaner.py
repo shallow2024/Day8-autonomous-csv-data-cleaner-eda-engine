@@ -41,3 +41,10 @@ def test_unsafe_generated_code_is_rejected(code):
 
 def test_extract_code_removes_markdown_fences():
     assert extract_code("```python\ndf = df.drop_duplicates()\n```") == "df = df.drop_duplicates()"
+
+
+def test_huggingface_generation_requires_hf_token(monkeypatch):
+    from data_cleaner import generate_cleaning_code
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    with pytest.raises(RuntimeError, match="HF_TOKEN"):
+        generate_cleaning_code({"rows": 1})
