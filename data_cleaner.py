@@ -127,15 +127,24 @@ def generate_cleaning_code(metadata: dict[str, Any], model: str = "Qwen/Qwen2.5-
         base_url="https://router.huggingface.co/v1",
         api_key=token,
     )
-    response = client.chat.completions.create(
-        model=model,
-        temperature=0,
-        max_tokens=700,
-        messages=[
-            {"role": "system", "content": "Return only safe pandas code. The input DataFrame is named df."},
-            {"role": "user", "content": build_cleaning_prompt(metadata)},
-        ],
-    )
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            temperature=0,
+            max_tokens=700,
+            messages=[
+                {"role": "system", "content": "Return only safe pandas code. The input DataFrame is named df."},
+                {"role": "user", "content": build_cleaning_prompt(metadata)},
+            ],
+        )
+    except Exception as exc:
+        if getattr(exc, "status_code", None) == 402 or "no remaining credits" in str(exc).lower():
+            raise RuntimeError(
+                "Hugging Face Inference Providers reports no remaining credits. "
+                "Use --dry-run for the free offline cleaner, or use a Hugging Face "
+                "account/provider with available inference credits."
+            ) from exc
+        raise
     return extract_code(response.choices[0].message.content or "")
 
 

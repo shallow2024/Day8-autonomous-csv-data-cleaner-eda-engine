@@ -48,3 +48,23 @@ def test_huggingface_generation_requires_hf_token(monkeypatch):
     monkeypatch.delenv("HF_TOKEN", raising=False)
     with pytest.raises(RuntimeError, match="HF_TOKEN"):
         generate_cleaning_code({"rows": 1})
+
+
+def test_huggingface_credit_error_is_explained(monkeypatch):
+    import data_cleaner
+
+    class CreditError(Exception):
+        status_code = 402
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            raise CreditError("no remaining credits")
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    monkeypatch.setattr("openai.OpenAI", FakeClient)
+    with pytest.raises(RuntimeError, match="no remaining credits"):
+        data_cleaner.generate_cleaning_code({"rows": 1})

@@ -144,6 +144,16 @@ Use a model/provider suffix available to your account. The default explicitly ro
 
 The selected provider is temporarily busy. Retry later or choose another supported provider/model route.
 
+### `402` or `no remaining credits`
+
+Your token is reaching Hugging Face, but the selected Inference Provider account has no remaining inference credits. This is an account/provider quota response, not a Python or CSV error. Run the free local path instead:
+
+```powershell
+.\.venv\Scripts\python.exe data_cleaner.py examples\messy_customers.csv --dry-run
+```
+
+The dry-run still demonstrates EDA, cleaning, AST-safe execution, CSV export, Excel export, and JSON metadata without a hosted model. To use LLM-generated cleaning code, use a Hugging Face account/provider with available inference credits.
+
 ## Limitations
 
 - The AST allow-list is a project demonstration, not a complete security boundary. For production, run untrusted code in a separate locked-down process/container with OS-level restrictions, resource limits, and no secrets.
