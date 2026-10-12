@@ -77,3 +77,9 @@ def test_column_string_normalization_is_allowed():
         "df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')",
     )
     assert cleaned.columns.tolist() == ["customer_name"]
+
+
+def test_median_imputation_is_allowed():
+    df = pd.DataFrame({"age": [20, None, 40]})
+    cleaned = execute_cleaning_code(df, "df['age'] = df['age'].fillna(df['age'].median())")
+    assert cleaned["age"].tolist() == [20.0, 30.0, 40.0]

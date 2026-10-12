@@ -17,7 +17,10 @@ ALLOWED_CALLS = {
     "df.drop", "df.astype", "df.replace", "df.columns", "df.copy",
     "df.select_dtypes", "df.duplicated", "df.drop_duplicates",
 }
-ALLOWED_CHAINED_METHODS = {"fillna", "dropna", "astype", "replace", "drop_duplicates", "reset_index"}
+ALLOWED_CHAINED_METHODS = {
+    "fillna", "dropna", "astype", "replace", "drop_duplicates", "reset_index",
+    "median", "mean", "min", "max", "sum", "round", "clip",
+}
 ALLOWED_STRING_METHODS = {"strip", "lower", "upper", "replace", "title"}
 FORBIDDEN_NAMES = {"__import__", "eval", "exec", "open", "compile", "globals", "locals", "input", "os", "subprocess", "pathlib"}
 
